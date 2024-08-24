@@ -4,118 +4,136 @@ import SearchIcon from '@/components/icons/SearchIcon'
 ---
 
 <site-search id='search' class='ms-auto'>
-	<button data-open-modal class='flex items-center justify-center rounded-md gap-1'>
-		<SearchIcon />
-	</button>
-	<dialog
-		aria-label='search'
-		class='h-full max-h-full w-full max-w-full border border-zinc-400 bg-white dark:bg-[#0a0910ec] shadow backdrop:backdrop-blur sm:mx-auto sm:mb-auto sm:mt-16 sm:h-max sm:max-h-[calc(100%-8rem)] sm:min-h-[15rem] sm:w-5/6 sm:max-w-[48rem] sm:rounded-md opacity-0'
-	>
-		<div class='dialog-frame flex flex-col gap-4 p-6 pt-12 sm:pt-6'>
-			<button
-				data-close-modal
-				class='ms-auto cursor-pointer rounded-full bg-black text-white px-4 py-2 dark:bg-white dark:text-black'
-			>
-				Close
-			</button>
-			<div class='search-container dark:text-white'>
-				<div id='pagefind__search'></div>
-			</div>
-		</div>
-	</dialog>
+    <button data-open-modal class='flex items-center justify-center rounded-md gap-1'>
+        <SearchIcon />
+    </button>
+    <dialog
+        aria-label='search'
+        class='h-full max-h-full w-full max-w-full border border-zinc-400 bg-white dark:bg-[#0a0910ec] shadow backdrop:backdrop-blur sm:mx-auto sm:mb-auto sm:mt-16 sm:h-max sm:max-h-[calc(100%-8rem)] sm:min-h-[15rem] sm:w-5/6 sm:max-w-[48rem] sm:rounded-md opacity-0'
+    >
+        <div class='dialog-frame flex flex-col gap-4 p-6 pt-12 sm:pt-6'>
+            <button
+                data-close-modal
+                class='ms-auto cursor-pointer rounded-full bg-black text-white px-4 py-2 dark:bg-white dark:text-black'
+            >
+                Close
+            </button>
+            <div class='search-container dark:text-white'>
+                <div id='pagefind__search'></div>
+            </div>
+        </div>
+    </dialog>
 </site-search>
 
 <script>
-	import { animate } from 'motion'
-	class SiteSearch extends HTMLElement {
-		constructor() {
-			super()
-			const openBtn = this.querySelector<HTMLButtonElement>('button[data-open-modal]')!
-			const closeBtn = this.querySelector<HTMLButtonElement>('button[data-close-modal]')!
-			const dialog = this.querySelector('dialog')!
-			const dialogFrame = this.querySelector('.dialog-frame')!
+    import { animate } from 'motion'
 
-			const onWindowClick = (event: MouseEvent) => {
-				if (
-					document.body.contains(event.target as Node) &&
-					!dialogFrame.contains(event.target as Node)
-				)
-					closeModal()
-			}
+    class SiteSearch extends HTMLElement {
+        constructor() {
+            super()
+            this.initializeElements()
+            this.setupEventListeners()
+            this.initializePagefind()
+        }
 
-			const handleEscKey = (e: KeyboardEvent) => {
-				if (e.key === 'Escape' && dialog.open) {
-					closeModal()
-					window.removeEventListener('keydown', handleEscKey)
-				}
-			}
+        initializeElements() {
+            this.openBtn = this.querySelector<HTMLButtonElement>('button[data-open-modal]')!
+            this.closeBtn = this.querySelector<HTMLButtonElement>('button[data-close-modal]')!
+            this.dialog = this.querySelector('dialog')!
+            this.dialogFrame = this.querySelector('.dialog-frame')!
+        }
 
-			const openModal = (event?: MouseEvent) => {
-				dialog.showModal()
+        setupEventListeners() {
+            this.openBtn.addEventListener('click', this.openModal.bind(this))
+            this.closeBtn.addEventListener('click', this.closeModal.bind(this))
+            document.addEventListener('astro:after-swap', this.closeModal.bind(this))
 
-				animate(
-					'dialog',
-					{
-						clipPath: [
-							'polygon(0 0, 100% 0, 100% -200%, -200% -200%)',
-							'polygon(0 0, 100% 0, 100% 100%, 0% 100%)'
-						],
-						opacity: [0, 1]
-					},
-					{ duration: 0.2 }
-				)
-				document.body.classList.add('overflow-hidden')
-				this.querySelector('input')?.focus()
-				event?.stopPropagation()
-				window.addEventListener('click', onWindowClick)
-				window.addEventListener('keydown', handleEscKey)
-			}
+            window.addEventListener('keydown', (e) => {
+                if (e.key === '/' && !this.dialog.open) {
+                    this.openModal()
+                    e.preventDefault()
+                }
+            })
+        }
 
-			const closeModal = () => {
-				dialog.close()
-				document.body.classList.remove('overflow-hidden')
-				window.removeEventListener('click', onWindowClick)
-				window.addEventListener('keydown', handleEscKey)
-			}
+        initializePagefind() {
+            window.addEventListener('DOMContentLoaded', async () => {
+                try {
+                    if (import.meta.env.MODE === 'development') {
+                        console.log('Running in development mode, skipping Pagefind initialization.')
+                        return
+                    }
 
-			openBtn.addEventListener('click', openModal)
-			closeBtn.addEventListener('click', closeModal)
-			document.addEventListener('astro:after-swap', closeModal)
+                    const onIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1))
+                    onIdle(async () => {
+                        // @ts-ignore
+                        const { PagefindUI } = await import('@pagefind/default-ui')
+                        new PagefindUI({
+                            element: '#pagefind__search',
+                            baseUrl: import.meta.env.BASE_URL,
+                            bundlePath: `${import.meta.env.BASE_URL.replace(/\/$/, '')}/pagefind/`,
+                            showImages: false
+                        })
+                    })
+                } catch (error) {
+                    console.error('Failed to load PagefindUI:', error)
+                }
+            })
+        }
 
-			// Keyboard shortcut for opening search modal
-			window.addEventListener('keydown', (e) => {
-				if (e.key === '/' && !dialog.open) {
-					openModal()
-					e.preventDefault()
-				}
-			})
+        openModal(event?: MouseEvent) {
+            this.dialog.showModal()
+            animate(
+                'dialog',
+                {
+                    clipPath: [
+                        'polygon(0 0, 100% 0, 100% -200%, -200% -200%)',
+                        'polygon(0 0, 100% 0, 100% 100%, 0% 100%)'
+                    ],
+                    opacity: [0, 1]
+                },
+                { duration: 0.2 }
+            )
+            document.body.classList.add('overflow-hidden')
+            this.querySelector('input')?.focus()
+            event?.stopPropagation()
+            window.addEventListener('click', this.onWindowClick.bind(this))
+            window.addEventListener('keydown', this.handleEscKey.bind(this))
+        }
 
-			// Initialize Pagefind search
-			window.addEventListener('DOMContentLoaded', () => {
-				const onIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1))
-				onIdle(async () => {
-					// @ts-ignore
-					const { PagefindUI } = await import('@pagefind/default-ui')
-					new PagefindUI({
-						element: '#pagefind__search',
-						baseUrl: import.meta.env.BASE_URL,
-						bundlePath: import.meta.env.BASE_URL.replace(/\/$/, '') + '/pagefind/',
-						showImages: false
-					})
-				})
-			})
-		}
-	}
+        closeModal() {
+            this.dialog.close()
+            document.body.classList.remove('overflow-hidden')
+            window.removeEventListener('click', this.onWindowClick.bind(this))
+            window.removeEventListener('keydown', this.handleEscKey.bind(this))
+        }
 
-	customElements.define('site-search', SiteSearch)
+        onWindowClick(event: MouseEvent) {
+            if (
+                document.body.contains(event.target as Node) &&
+                !this.dialogFrame.contains(event.target as Node)
+            ) {
+                this.closeModal()
+            }
+        }
+
+        handleEscKey(e: KeyboardEvent) {
+            if (e.key === 'Escape' && this.dialog.open) {
+                this.closeModal()
+                window.removeEventListener('keydown', this.handleEscKey.bind(this))
+            }
+        }
+    }
+
+    customElements.define('site-search', SiteSearch)
 </script>
 
 <style is:global>
-	.dark {
-		--pagefind-ui-primary: #eeeeee;
-		--pagefind-ui-text: #eeeeee;
-		--pagefind-ui-background: #152028;
-		--pagefind-ui-border: #152028;
-		--pagefind-ui-tag: #152028;
-	}
+    .dark {
+        --pagefind-ui-primary: #eeeeee;
+        --pagefind-ui-text: #eeeeee;
+        --pagefind-ui-background: #152028;
+        --pagefind-ui-border: #152028;
+        --pagefind-ui-tag: #152028;
+    }
 </style>
