@@ -1,14 +1,11 @@
 ---
-// Inspired by -> https://github.com/chrismwilliams/astro-theme-cactus/blob/main/src/components/Search.astro
-
 import '@pagefind/default-ui/css/ui.css'
 import SearchIcon from '@/components/icons/SearchIcon'
 ---
 
 <site-search id='search' class='ms-auto'>
-	<button data-open-modal disabled class='flex items-center justify-center rounded-md gap-1'>
+	<button data-open-modal class='flex items-center justify-center rounded-md gap-1'>
 		<SearchIcon />
-		<!-- <span class='md:hidden text-2xl'> Search</span> -->
 	</button>
 	<dialog
 		aria-label='search'
@@ -18,22 +15,12 @@ import SearchIcon from '@/components/icons/SearchIcon'
 			<button
 				data-close-modal
 				class='ms-auto cursor-pointer rounded-full bg-black text-white px-4 py-2 dark:bg-white dark:text-black'
-				>Close</button
 			>
-			{
-				import.meta.env.DEV ? (
-					<div class='mx-auto text-center dark:text-white'>
-						<p>
-							Search is only available in production builds. <br />
-							Try building and previewing the site to test it out locally.
-						</p>
-					</div>
-				) : (
-					<div class='search-container dark:text-white'>
-						<div id='pagefind__search' />
-					</div>
-				)
-			}
+				Close
+			</button>
+			<div class='search-container dark:text-white'>
+				<div id='pagefind__search'></div>
+			</div>
 		</div>
 	</dialog>
 </site-search>
@@ -49,19 +36,20 @@ import SearchIcon from '@/components/icons/SearchIcon'
 			const dialogFrame = this.querySelector('.dialog-frame')!
 
 			const onWindowClick = (event: MouseEvent) => {
-				// make sure the click is outside the of the dialog
 				if (
 					document.body.contains(event.target as Node) &&
 					!dialogFrame.contains(event.target as Node)
 				)
 					closeModal()
 			}
+
 			const handleEscKey = (e: KeyboardEvent) => {
 				if (e.key === 'Escape' && dialog.open) {
 					closeModal()
 					window.removeEventListener('keydown', handleEscKey)
-				} else return
+				}
 			}
+
 			const openModal = (event?: MouseEvent) => {
 				dialog.showModal()
 
@@ -91,11 +79,10 @@ import SearchIcon from '@/components/icons/SearchIcon'
 			}
 
 			openBtn.addEventListener('click', openModal)
-			openBtn.disabled = false
 			closeBtn.addEventListener('click', closeModal)
 			document.addEventListener('astro:after-swap', closeModal)
 
-			// Listen for `/` keyboard shortcut
+			// Keyboard shortcut for opening search modal
 			window.addEventListener('keydown', (e) => {
 				if (e.key === '/' && !dialog.open) {
 					openModal()
@@ -103,8 +90,8 @@ import SearchIcon from '@/components/icons/SearchIcon'
 				}
 			})
 
+			// Initialize Pagefind search
 			window.addEventListener('DOMContentLoaded', () => {
-				if (import.meta.env.DEV) return
 				const onIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1))
 				onIdle(async () => {
 					// @ts-ignore
