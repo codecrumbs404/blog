@@ -7,7 +7,7 @@
 	"license": "GPL-3.0-only",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/abhishekpanthee"
+		"url": "https://github.com/abhishekpanthee/blog"
 	},
 	"keywords": [
 		"astro",
