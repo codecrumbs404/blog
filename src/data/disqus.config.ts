@@ -5,5 +5,5 @@ interface DisqusConfig {
 
 export const disqusConfig: DisqusConfig = {
 	enabled: true,
-	shortname: 'abhishekpanthee-com-np'
+	shortname: 'blogs-abhishekpanthee-com-np'
 }
